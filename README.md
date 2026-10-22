@@ -1,13 +1,12 @@
-# FlyingCar (Volt Sky Chase 3D)
+# FlyingCar: Volt Sky Chase 3D
 
-A 3D flying car game in one HTML file. Drive through a city, fly over barriers and traffic, and stay away from the police.
+A 3D flying car game in one HTML file. Drive through an endless city, fly over barriers and traffic, land on rooftops, and escape the police.
 
-- `index.html`: the current game (city, traffic lights, barriers, police chase).
-- `volt-sky-landing.html`: the earlier landing-pad version.
-
-Controls: arrow keys or WASD to drive, Space to fly (hold to rise, release to fall), Shift for handbrake, Esc to pause, R to restart.
+Controls: arrow keys or WASD to drive, Space to fly (hold to climb, release to fall), Shift for handbrake, Esc to pause, R to restart.
 Phone: LEFT/RIGHT to steer, GAS/BRAKE, and FLY.
 
-Rules: running a red light or crashing into a car gives a wanted star. Police chase you on the ground. Get caught and you lose 300 points and all stars. Flying over cars scores 100 points each.
+Rules: breaking a traffic rule (red light, crashing into a car) gives a wanted star. The chase lasts at least 60 seconds after the last rule break. Each extra break during a chase adds a flying police car. Helicopters shoot when you are in the air, and a hit blows up the car.
+
+Coins: you earn 1 coin per 100 m driven, plus rewards for escaping the police. Spend coins on upgrades (Engine, Thrusters, Handling, Armor) from the menu.
 
 Three.js is embedded in the file, so it works offline.
