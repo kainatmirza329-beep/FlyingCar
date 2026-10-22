@@ -1041,7 +1041,12 @@ function update(dt) {
       px += Math.sin(ph) * 8;
       pz += Math.cos(ph) * 8;
       pv = 0;
-      flash('Police caught you! -300');
+      // Caught: the police back off and the chase ends
+      stars = 0; flyExtra = 0; chaseT = 0;
+      syncPolice();
+      removeHeli();
+      shieldLeft = stats().shield;
+      flash('Police caught you! They backed off. -300');
       break;
     }
   }
