@@ -168,51 +168,69 @@ for (const rp of ROAD_POS) {
     do { s = rnd(-225, 225); } while (Math.abs(s) < 50 || nearCross(s));
     if (rp === 0) { /* same rule applies everywhere */ }
     // barrier on a Z road (across it, along X)
-    const bz = new THREE.Mesh(new THREE.BoxGeometry(14, 4.5, 1.2), barrierMat);
+    const bz = new THREE.Mesh(new THREE.BoxGeometry(15.4, 4.5, 1.2), barrierMat);
     bz.position.set(rp, 2.25, s); bz.castShadow = true; scene.add(bz);
-    const sz = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 1.25), stripeMat);
+    const sz = new THREE.Mesh(new THREE.BoxGeometry(15.4, 0.6, 1.25), stripeMat);
     sz.position.set(rp, 3.6, s); scene.add(sz);
-    barrierPolys.push(rectPoly(rp - 7, s - 0.6, rp + 7, s + 0.6));
-    barriers.push(barrierPolys[barrierPolys.length - 1]);
-    // barrier on an X road (across it, along Z)
+    barrierPolys.push(rectPoly(rp - 7.7, s - 0.6, rp + 7.7, s + 0.6));
+        // barrier on an X road (across it, along Z)
     let t;
     do { t = rnd(-225, 225); } while (Math.abs(t) < 50 || nearCross(t));
-    const bx = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.5, 14), barrierMat);
+    const bx = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.5, 15.4), barrierMat);
     bx.position.set(t, 2.25, rp); bx.castShadow = true; scene.add(bx);
-    const sx = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.6, 14), stripeMat);
+    const sx = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.6, 15.4), stripeMat);
     sx.position.set(t, 3.6, rp); scene.add(sx);
-    barrierPolys.push(rectPoly(t - 0.6, rp - 7, t + 0.6, rp + 7));
+    barrierPolys.push(rectPoly(t - 0.6, rp - 7.7, t + 0.6, rp + 7.7));
   }
 }
 
-// ---------- Traffic lights ----------
-const lampMats = {
-  red: new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0xff2020, emissiveIntensity: 1.3 }),
-  yellow: new THREE.MeshStandardMaterial({ color: 0x443300, emissive: 0xffc000, emissiveIntensity: 1.3 }),
-  green: new THREE.MeshStandardMaterial({ color: 0x004410, emissive: 0x20ff60, emissiveIntensity: 1.3 }),
+// ---------- Traffic lights: black housing with red (top), yellow (middle), green (bottom) lamps ----------
+const housingGeo = new THREE.BoxGeometry(1.2, 3.4, 0.6);
+const housingMat = new THREE.MeshStandardMaterial({ color: 0x0b0b0b, roughness: 0.6 });
+const discGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.12, 16);
+discGeo.rotateX(Math.PI / 2);
+const litMat = {
+  red: new THREE.MeshStandardMaterial({ color: 0x550000, emissive: 0xff1a1a, emissiveIntensity: 1.6 }),
+  yellow: new THREE.MeshStandardMaterial({ color: 0x665200, emissive: 0xffc000, emissiveIntensity: 1.6 }),
+  green: new THREE.MeshStandardMaterial({ color: 0x004d1a, emissive: 0x22ff66, emissiveIntensity: 1.6 }),
+};
+const dimMat = {
+  red: new THREE.MeshStandardMaterial({ color: 0x2a0000, roughness: 0.4 }),
+  yellow: new THREE.MeshStandardMaterial({ color: 0x2a2400, roughness: 0.4 }),
+  green: new THREE.MeshStandardMaterial({ color: 0x002a10, roughness: 0.4 }),
 };
 const poleMat = new THREE.MeshStandardMaterial({ color: 0x555b66, roughness: 0.6 });
 const poleGeo = new THREE.CylinderGeometry(0.15, 0.15, 7, 6);
-const lampGeo = new THREE.BoxGeometry(1.1, 1.1, 0.4);
-const lampsZ = [], lampsX = [];
-for (const ix of ROAD_POS) for (const iz of ROAD_POS) {
-  for (const [sx, sz] of [[1, 1], [-1, -1], [-1, 1], [1, -1]]) {
-    const p = new THREE.Mesh(poleGeo, poleMat);
-    p.position.set(ix + sx * 8.5, 3.5, iz + sz * 8.5);
-    scene.add(p);
+const heads = [];   // { axis, discs: {red, yellow, green} }
+function makeHead(x, y, z, axis, face) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  g.rotation.y = face;
+  const housing = new THREE.Mesh(housingGeo, housingMat);
+  housing.castShadow = true;
+  g.add(housing);
+  const discs = {};
+  for (const [col, dy] of [['red', 1.1], ['yellow', 0], ['green', -1.1]]) {
+    const d = new THREE.Mesh(discGeo, dimMat[col]);
+    d.position.set(0, dy, 0.33);
+    g.add(d);
+    discs[col] = d;
   }
-  const addLamp = (x, z, arr) => {
-    const l = new THREE.Mesh(lampGeo, lampMats.green);
-    l.position.set(x, 6.8, z);
-    scene.add(l);
-    arr.push(l);
-  };
-  addLamp(ix + 8.5, iz + 8.5, lampsZ);
-  addLamp(ix - 8.5, iz - 8.5, lampsZ);
-  addLamp(ix - 8.5, iz + 8.5, lampsX);
-  addLamp(ix + 8.5, iz - 8.5, lampsX);
+  scene.add(g);
+  heads.push({ axis, discs });
+}
+for (const ix of ROAD_POS) for (const iz of ROAD_POS) {
+  // four corners of each intersection: two heads for Z traffic, two for X traffic
+  for (const [sx, sz, axis] of [[1, 1, 'z'], [-1, -1, 'z'], [-1, 1, 'x'], [1, -1, 'x']]) {
+    const x = ix + sx * 8.5, z = iz + sz * 8.5;
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.set(x, 3.5, z);
+    scene.add(pole);
+    makeHead(x, 6.8, z, axis, Math.atan2(ix - x, iz - z));  // face the intersection
+  }
 }
 // axis 'z' cars go on the Z roads; 'x' cars on the X roads
+let gameT = 0;
 function lightFor(axis) {
   const c = gameT % CYCLE;
   if (axis === 'z') { if (c < 5.5) return 'green'; if (c < 6) return 'yellow'; return 'red'; }
@@ -220,7 +238,13 @@ function lightFor(axis) {
   if (c >= 11.5) return 'yellow';
   return 'red';
 }
-let gameT = 0;
+function updateSignals() {
+  const st = { z: lightFor('z'), x: lightFor('x') };
+  for (const h of heads) {
+    const on = st[h.axis];
+    for (const col of ['red', 'yellow', 'green']) h.discs[col].material = col === on ? litMat[col] : dimMat[col];
+  }
+}
 
 // ---------- Car model (nose points to -Z) ----------
 const CAR_PROFILE = [[-2.05, 0.5], [2.05, 0.5], [2.05, 0.98], [1.25, 1.02], [-0.95, 1.02], [-1.85, 0.98], [-2.05, 0.8]];
@@ -416,20 +440,32 @@ function updateTraffic(dt) {
 
 // ---------- Police ----------
 const police = [];
-function spawnPolice() {
-  const ang = rnd(0, Math.PI * 2), r = rnd(60, 90);
+const rotorGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.06, 16);
+function spawnPolice(fly) {
+  const ang = rnd(0, Math.PI * 2), r = fly ? rnd(40, 60) : rnd(60, 90);
   const mesh = makeCar(0x1d2b4f, false);
   const barL = new THREE.Mesh(barGeo, sirenRed);
   barL.position.set(-0.3, 1.5, 0.2);
   const barR = new THREE.Mesh(barGeo, sirenBlue);
   barR.position.set(0.3, 1.5, 0.2);
   mesh.add(barL, barR);
+  let rotor = null;
+  if (fly) {
+    rotor = new THREE.Mesh(rotorGeo, trimMat);
+    rotor.position.set(0, 1.9, 0);
+    mesh.add(rotor);
+  }
   scene.add(mesh);
-  police.push({ mesh, bars: [barL, barR], x: px + Math.cos(ang) * r, z: pz + Math.sin(ang) * r, h: 0 });
+  police.push({
+    mesh, bars: [barL, barR], rotor, fly,
+    x: px + Math.cos(ang) * r, z: pz + Math.sin(ang) * r,
+    alt: fly ? alt + 6 : 0, h: 0,
+  });
 }
+// 1 star = 1 police car, 2 stars = 2 (one of them flies), 3 stars = 3
 function syncPolice() {
   while (police.length > stars) scene.remove(police.pop().mesh);
-  while (police.length < stars) spawnPolice();
+  while (police.length < stars) spawnPolice(stars >= 2 && police.length % 2 === 1);
 }
 function clearPolice() {
   for (const p of police) scene.remove(p.mesh);
@@ -439,15 +475,38 @@ function updatePolice(dt) {
   for (const p of police) {
     const dx = px - p.x, dz = pz - p.z;
     const d = Math.hypot(dx, dz);
-    const sp = alt > 3 ? 6 : 16;        // they can't follow into the sky; they wait below
-    if (d > 1) {
-      p.x += (dx / d) * sp * dt;
-      p.z += (dz / d) * sp * dt;
+    if (p.fly) {
+      // flying police follow the car's height and can't be outrun easily
+      p.alt = Math.max(2.5, p.alt + (alt - p.alt) * Math.min(1, 2 * dt));
+      if (d > 1) { p.x += (dx / d) * 14 * dt; p.z += (dz / d) * 14 * dt; }
+      if (p.rotor) p.rotor.rotation.y += dt * 25;
+    } else {
+      const sp = alt > 3 ? 6 : 16;     // ground police wait when you're high up
+      if (d > 1) { p.x += (dx / d) * sp * dt; p.z += (dz / d) * sp * dt; }
     }
     p.h = Math.atan2(-(px - p.x), -(pz - p.z));
-    p.mesh.position.set(p.x, 0, p.z);
+    p.mesh.position.set(p.x, p.fly ? p.alt : 0, p.z);
     p.mesh.rotation.y = p.h;
   }
+}
+
+// ---------- Coins: fly through the rings in the air ----------
+const coinGeo = new THREE.TorusGeometry(1.1, 0.22, 8, 18);
+const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd34d, emissive: 0xaa7700, emissiveIntensity: 0.6, metalness: 0.6, roughness: 0.3 });
+const coins = [];
+for (let i = 0; i < 70; i++) {
+  const onZ = Math.random() < 0.5;
+  const road = pick(ROAD_POS);
+  const s2 = rnd(-230, 230);
+  const off = rnd(-3, 3);
+  const x = onZ ? road + off : s2;
+  const z = onZ ? s2 : road + off;
+  const y = rnd(3, 6);
+  const mesh = new THREE.Mesh(coinGeo, coinMat);
+  mesh.position.set(x, y, z);
+  mesh.rotation.y = onZ ? 0 : Math.PI / 2;
+  scene.add(mesh);
+  coins.push({ mesh, x, y, z, got: false });
 }
 
 // ---------- Player state ----------
@@ -469,7 +528,7 @@ let px = 0, pz = 0, ph = 0, pv = 0, steer = 0;
 let alt = 0, vy = 0;
 let prevPx = 0, prevPz = 0;
 let state = 'menu';            // menu | playing | paused | over
-let score = 0, stars = 0, calmT = 0, violCool = 0, bumpCool = 0, bumps = 0;
+let score = 0, stars = 0, calmT = 0, violCool = 0, bumpCool = 0, bumps = 0, reinfT = 0;
 let best = 0;
 try { best = Number(localStorage.getItem('voltsky-chase-best')) || 0; } catch (e) {}
 const camPos = new THREE.Vector3(0, 6, 8);
@@ -531,7 +590,7 @@ function hideMenu() { $('menu').classList.add('hidden'); }
 function showStart() {
   state = 'menu';
   showMenu('Volt Sky Chase 3D',
-    'Shehar mein aage badhte raho. Beech mein barrier aate hain, unhe udkar paar karo. Red light todoge to police peeche lagegi.',
+    'Shehar mein aage badhte raho. Barrier aate hain, unhe udkar paar karo. Hawa mein coins uthao. Red light todoge to police peeche lagegi.',
     '',
     [{ label: 'PLAY', fn: startGame }]);
 }
@@ -543,6 +602,8 @@ function startGame() {
   prevPx = px; prevPz = pz;
   clearTraffic();
   clearPolice();
+  reinfT = 0;
+  for (const c of coins) { c.got = false; c.mesh.visible = true; }
   for (let i = 0; i < TRAFFIC_N; i++) spawnTraffic();
   state = 'playing';
   hideMenu();
@@ -696,7 +757,17 @@ function update(dt) {
 
   // Police catch you on the ground
   for (const p of police) {
-    if (alt <= 1.6 && Math.hypot(px - p.x, pz - p.z) < 3.8) { caught(); break; }
+    const pa = p.fly ? p.alt : 0;
+    if (Math.hypot(px - p.x, pz - p.z) < 3.8 && Math.abs(alt - pa) < 2.2) { caught(); break; }
+  }
+  for (const c of coins) {
+    if (c.got) continue;
+    if (Math.hypot(px - c.x, pz - c.z) < 3 && Math.abs(alt - c.y) < 2.5) {
+      c.got = true;
+      c.mesh.visible = false;
+      score += 50;
+      flash('+50 Coin');
+    }
   }
 
   // Wanted decay: calm if airborne high or police far away
@@ -706,6 +777,13 @@ function update(dt) {
     if (calmT > 6) { calmT = 0; setStars(stars - 1); }
   } else {
     calmT = 0;
+  }
+
+  if (stars > 0 && police.length < Math.min(4, stars + 1)) {
+    reinfT += dt;
+    if (reinfT > 10) { reinfT = 0; spawnPolice(stars >= 2 && Math.random() < 0.5); }
+  } else {
+    reinfT = 0;
   }
 
   score += Math.round(Math.abs(pv) * dt * 2);
@@ -753,9 +831,7 @@ function loop(now) {
     updateHud();
   }
   // Traffic light colours
-  const zState = lampMats[lightFor('z')], xState = lampMats[lightFor('x')];
-  for (const l of lampsZ) l.material = zState;
-  for (const l of lampsX) l.material = xState;
+  updateSignals();
   // Police siren flashing
   const flip = Math.floor(now / 250) % 2;
   for (const p of police) {
